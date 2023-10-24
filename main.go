@@ -5,14 +5,43 @@ import (
 	"fmt"
 )
 
+const (
+	ModelUDMPro     = "UDMPro"
+	ModelUDR        = "UDR"
+	ModelController = "Controller"
+)
+
+type UnifiPrune struct {
+	Model    string
+	Ip       string
+	User     string
+	Password string
+	URL      string
+}
+
+func NewUnifiPrune(model, ip, user, password string) *UnifiPrune {
+	unifiPrune := &UnifiPrune{
+		Model:    model,
+		Ip:       ip,
+		User:     user,
+		Password: password,
+	}
+	if model == ModelUDMPro {
+
+	} else {
+
+	}
+	return unifiPrune
+}
+
 func main() {
 	var model string
-	var gateway string
+	var ip string
 	var user string
 	var password string
 
 	flag.StringVar(&model, "m", "", "")
-	flag.StringVar(&gateway, "g", "", "")
+	flag.StringVar(&ip, "g", "", "")
 	flag.StringVar(&user, "u", "", "")
 	flag.StringVar(&password, "p", "", "")
 	flag.Usage = func() {
@@ -29,14 +58,14 @@ func main() {
 	}
 	flag.Parse()
 
-	if model == "" || gateway == "" || user == "" || password == "" {
+	if model == "" || ip == "" || user == "" || password == "" {
 		flag.Usage()
 		return
 	}
 	models := map[string]bool{
-		"UDMPro":     true,
-		"UDR":        true,
-		"Controller": true,
+		ModelUDMPro:     true,
+		ModelUDR:        true,
+		ModelController: true,
 	}
 	if _, ok := models[model]; !ok {
 		flag.Usage()
@@ -44,7 +73,7 @@ func main() {
 	}
 
 	fmt.Println(model)
-	fmt.Println(gateway)
+	fmt.Println(ip)
 	fmt.Println(user)
 	fmt.Println(password)
 }
