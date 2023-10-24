@@ -11,29 +11,6 @@ const (
 	ModelController = "Controller"
 )
 
-type UnifiPrune struct {
-	Model    string
-	Ip       string
-	User     string
-	Password string
-	URL      string
-}
-
-func NewUnifiPrune(model, ip, user, password string) *UnifiPrune {
-	unifiPrune := &UnifiPrune{
-		Model:    model,
-		Ip:       ip,
-		User:     user,
-		Password: password,
-	}
-	if model == ModelUDMPro {
-
-	} else {
-
-	}
-	return unifiPrune
-}
-
 func main() {
 	var model string
 	var ip string
@@ -72,8 +49,9 @@ func main() {
 		return
 	}
 
-	fmt.Println(model)
-	fmt.Println(ip)
-	fmt.Println(user)
-	fmt.Println(password)
+	prune := NewPrune(model, ip, user, password)
+	err := prune.Login()
+	if err != nil {
+		fmt.Println(err)
+	}
 }
