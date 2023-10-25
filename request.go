@@ -28,17 +28,17 @@ func NewHttpRequest(timeout int) *HttpRequest {
 	return httpRequest
 }
 
-func (r *HttpRequest) getRequest(url, method string, data map[string]interface{}) (*http.Request, error) {
-	var dataStr string
-	if data != nil {
-		jsonStr, err := json.Marshal(data)
+func (r *HttpRequest) getRequest(url, method string, params map[string]interface{}) (*http.Request, error) {
+	var paramStr string
+	if params != nil {
+		jsonStr, err := json.Marshal(params)
 		if err != nil {
 			return nil, fmt.Errorf("getRequest json marshal error: %w", err)
 		}
-		dataStr = string(jsonStr)
+		paramStr = string(jsonStr)
 	}
-	reqData := strings.NewReader(dataStr)
-	req, err := http.NewRequest(method, url, reqData)
+	reqParams := strings.NewReader(paramStr)
+	req, err := http.NewRequest(method, url, reqParams)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +89,8 @@ func (r *HttpRequest) getResponseString(rsp *http.Response) ([]byte, error) {
 	return rspStr, nil
 }
 
-func (r *HttpRequest) Request(url, method string, data map[string]interface{}, headers map[string]string) ([]byte, error) {
-	req, err := r.getRequest(url, method, data)
+func (r *HttpRequest) Request(url, method string, params map[string]interface{}, headers map[string]string) ([]byte, error) {
+	req, err := r.getRequest(url, method, params)
 	if err != nil {
 		return nil, err
 	}

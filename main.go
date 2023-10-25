@@ -16,11 +16,13 @@ func main() {
 	var ip string
 	var user string
 	var password string
+	var port string
 
 	flag.StringVar(&model, "m", "", "")
 	flag.StringVar(&ip, "g", "", "")
 	flag.StringVar(&user, "u", "", "")
 	flag.StringVar(&password, "p", "", "")
+	flag.StringVar(&port, "P", "", "")
 	flag.Usage = func() {
 		usage := `Usages:
 -m <UDMPro/UDR/Controller>
@@ -30,7 +32,9 @@ func main() {
 -u
     Unifi console user
 -p
-    Unifi console password`
+    Unifi console password
+-P
+    Unifi console port, default is 443`
 		fmt.Println(usage)
 	}
 	flag.Parse()
@@ -49,11 +53,11 @@ func main() {
 		return
 	}
 
-	run(model, ip, user, password)
+	run(model, ip, port, user, password)
 }
 
-func run(model, ip, user, password string) {
-	prune := NewPrune(model, ip, user, password)
+func run(model, ip, port, user, password string) {
+	prune := NewPrune(model, ip, port, user, password)
 	err := prune.Run()
 	if err != nil {
 		fmt.Println(err)

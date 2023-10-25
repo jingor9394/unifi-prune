@@ -9,5 +9,8 @@ build_linux:
 run:
 	go run *.go
 
+format:
+	gofmt -s -w .
+
 clean:
 	rm ${BINARY_NAME}
