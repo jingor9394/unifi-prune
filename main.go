@@ -49,8 +49,12 @@ func main() {
 		return
 	}
 
+	run(model, ip, user, password)
+}
+
+func run(model, ip, user, password string) {
 	prune := NewPrune(model, ip, user, password)
-	err := prune.Login()
+	err := prune.Run()
 	if err != nil {
 		fmt.Println(err)
 	}
