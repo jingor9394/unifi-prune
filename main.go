@@ -21,8 +21,7 @@ func main() {
 	flag.StringVar(&model, "m", "", "")
 	flag.StringVar(&ip, "g", "", "")
 	flag.StringVar(&user, "u", "", "")
-	flag.StringVar(&password, "p", "", "")
-	flag.StringVar(&port, "P", "", "")
+	flag.StringVar(&port, "p", "", "")
 	flag.Usage = func() {
 		usage := `Usages:
 -m <UDMPro/UDR/Controller>
@@ -32,14 +31,12 @@ func main() {
 -u
     Unifi console user
 -p
-    Unifi console password
--P
-    Unifi console port, default is 443`
+    Unifi console password`
 		fmt.Println(usage)
 	}
 	flag.Parse()
 
-	if model == "" || ip == "" || user == "" || password == "" {
+	if model == "" || ip == "" || user == "" {
 		flag.Usage()
 		return
 	}
@@ -51,6 +48,12 @@ func main() {
 	if _, ok := models[model]; !ok {
 		flag.Usage()
 		return
+	}
+
+	fmt.Println("please enter password:")
+	_, err := fmt.Scanln(&password)
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	run(model, ip, port, user, password)

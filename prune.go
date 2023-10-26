@@ -57,7 +57,7 @@ func NewPrune(model, ip, port, user, password string) *Prune {
 		user:     user,
 		password: password,
 
-		httpRequest:       NewHttpRequest(60),
+		httpRequest:       NewHttpRequest(30),
 		loginPath:         loginPath,
 		logoutPath:        logoutPath,
 		clientHistoryPath: clientHistoryPath,
