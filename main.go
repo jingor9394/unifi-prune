@@ -58,6 +58,19 @@ func main() {
 
 func run(model, ip, port, user, password string) {
 	prune := NewPrune(model, ip, port, user, password)
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+			if len(prune.httpRequest.cookies) == 0 {
+				return
+			}
+			err := prune.Logout()
+			if err != nil {
+				fmt.Printf("failed to logout: %s\n", err.Error())
+			}
+			fmt.Println("logged out successfully")
+		}
+	}()
 	err := prune.Run()
 	if err != nil {
 		fmt.Println(err)
