@@ -12,10 +12,9 @@ import (
 )
 
 type HttpRequest struct {
-	timeout  int
-	response *http.Response
-	cookies  []*http.Cookie
-	headers  http.Header
+	timeout int
+	cookies []*http.Cookie
+	headers http.Header
 }
 
 func NewHttpRequest(timeout int) *HttpRequest {
@@ -81,7 +80,6 @@ func (r *HttpRequest) getResponseString(rsp *http.Response) ([]byte, error) {
 	if rsp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("http code: %d", rsp.StatusCode)
 	}
-	r.response = rsp
 	rspStr, err := io.ReadAll(rsp.Body)
 	if err != nil {
 		return nil, err
@@ -89,7 +87,7 @@ func (r *HttpRequest) getResponseString(rsp *http.Response) ([]byte, error) {
 	return rspStr, nil
 }
 
-func (r *HttpRequest) Request(url, method string, params map[string]interface{}, headers map[string]string) ([]byte, error) {
+func (r *HttpRequest) RequestRaw(url, method string, params map[string]interface{}, headers map[string]string) (*http.Response, error) {
 	req, err := r.getRequest(url, method, params)
 	if err != nil {
 		return nil, err
@@ -104,6 +102,15 @@ func (r *HttpRequest) Request(url, method string, params map[string]interface{},
 	defer func() {
 		_ = rsp.Body.Close()
 	}()
+	return rsp, nil
+
+}
+
+func (r *HttpRequest) Request(url, method string, params map[string]interface{}, headers map[string]string) ([]byte, error) {
+	rsp, err := r.RequestRaw(url, method, params, headers)
+	if err != nil {
+		return nil, err
+	}
 
 	rspStr, err := r.getResponseString(rsp)
 	if err != nil {
@@ -112,7 +119,6 @@ func (r *HttpRequest) Request(url, method string, params map[string]interface{},
 	return rspStr, nil
 }
 
-func (r *HttpRequest) GetCookies() {
-	r.cookies = r.response.Cookies()
-	r.headers = r.response.Header
+func (r *HttpRequest) SetCookies(cookies []*http.Cookie) {
+	r.cookies = cookies
 }

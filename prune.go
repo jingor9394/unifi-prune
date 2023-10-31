@@ -99,11 +99,11 @@ func (p *Prune) Login() error {
 	headers["Content-Type"] = "application/json"
 	url := fmt.Sprintf("https://%s:%s/%s", p.ip, p.port, p.loginPath)
 
-	_, err := p.httpRequest.Request(url, "POST", params, headers)
+	rsp, err := p.httpRequest.RequestRaw(url, "POST", params, headers)
 	if err != nil {
 		return err
 	}
-	p.httpRequest.GetCookies()
+	p.httpRequest.SetCookies(rsp.Cookies())
 	return nil
 }
 
@@ -115,7 +115,7 @@ func (p *Prune) Logout() error {
 	}
 	url := fmt.Sprintf("https://%s:%s/%s", p.ip, p.port, p.logoutPath)
 
-	_, err := p.httpRequest.Request(url, "POST", nil, headers)
+	_, err := p.httpRequest.RequestRaw(url, "POST", nil, headers)
 	if err != nil {
 		return err
 	}
