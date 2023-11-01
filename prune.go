@@ -103,7 +103,8 @@ func (p *Prune) Login() error {
 	if err != nil {
 		return err
 	}
-	p.httpRequest.SetCookies(rsp.Cookies())
+	p.httpRequest.StoreCookies(rsp.Cookies())
+	p.httpRequest.StoreHeaders(rsp.Header)
 	return nil
 }
 

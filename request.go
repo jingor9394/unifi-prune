@@ -103,14 +103,23 @@ func (r *HttpRequest) RequestRaw(url, method string, params map[string]interface
 		_ = rsp.Body.Close()
 	}()
 	return rsp, nil
-
 }
 
 func (r *HttpRequest) Request(url, method string, params map[string]interface{}, headers map[string]string) ([]byte, error) {
-	rsp, err := r.RequestRaw(url, method, params, headers)
+	req, err := r.getRequest(url, method, params)
 	if err != nil {
 		return nil, err
 	}
+	r.setHeader(req, headers)
+
+	client := r.getClient(req)
+	rsp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rsp.Body.Close()
+	}()
 
 	rspStr, err := r.getResponseString(rsp)
 	if err != nil {
@@ -119,6 +128,10 @@ func (r *HttpRequest) Request(url, method string, params map[string]interface{},
 	return rspStr, nil
 }
 
-func (r *HttpRequest) SetCookies(cookies []*http.Cookie) {
+func (r *HttpRequest) StoreCookies(cookies []*http.Cookie) {
 	r.cookies = cookies
+}
+
+func (r *HttpRequest) StoreHeaders(headers http.Header) {
+	r.headers = headers
 }
