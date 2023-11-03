@@ -57,7 +57,7 @@ func NewPrune(model, ip, port, user, password string) *Prune {
 		user:     user,
 		password: password,
 
-		httpRequest:       NewHttpRequest(30),
+		httpRequest:       NewHttpRequest(),
 		loginPath:         loginPath,
 		logoutPath:        logoutPath,
 		clientHistoryPath: clientHistoryPath,
@@ -110,7 +110,7 @@ func (p *Prune) Login() error {
 
 func (p *Prune) Logout() error {
 	headers := make(map[string]string)
-	token, ok := p.httpRequest.headers["X-Csrf-Token"]
+	token, ok := p.httpRequest.Headers["X-Csrf-Token"]
 	if ok && len(token) > 0 {
 		headers["X-Csrf-Token"] = token[0]
 	}
@@ -162,7 +162,7 @@ func (p *Prune) RemoveOfflineClients(macs []string) error {
 			"cmd":  "forget-sta",
 		}
 		headers := make(map[string]string)
-		token, ok := p.httpRequest.headers["X-Csrf-Token"]
+		token, ok := p.httpRequest.Headers["X-Csrf-Token"]
 		if ok && len(token) > 0 {
 			headers["X-Csrf-Token"] = token[0]
 		}

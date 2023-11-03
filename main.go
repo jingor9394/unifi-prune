@@ -64,7 +64,7 @@ func run(model, ip, port, user, password string) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
-			if len(prune.httpRequest.cookies) == 0 {
+			if len(prune.httpRequest.Cookies) == 0 {
 				return
 			}
 			err := prune.Logout()

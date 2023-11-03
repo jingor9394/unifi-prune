@@ -13,16 +13,14 @@ import (
 
 type HttpRequest struct {
 	timeout int
-	cookies []*http.Cookie
-	headers http.Header
+
+	Cookies []*http.Cookie
+	Headers http.Header
 }
 
-func NewHttpRequest(timeout int) *HttpRequest {
-	if timeout == 0 {
-		timeout = 10
-	}
+func NewHttpRequest() *HttpRequest {
 	httpRequest := &HttpRequest{
-		timeout: timeout,
+		timeout: 10,
 	}
 	return httpRequest
 }
@@ -65,8 +63,8 @@ func (r *HttpRequest) getClient(req *http.Request) *http.Client {
 		},
 	}
 	jar, _ := cookiejar.New(nil)
-	if len(r.cookies) != 0 {
-		jar.SetCookies(req.URL, r.cookies)
+	if len(r.Cookies) != 0 {
+		jar.SetCookies(req.URL, r.Cookies)
 	}
 	client := &http.Client{
 		Timeout:   reqTimeout,
@@ -128,10 +126,14 @@ func (r *HttpRequest) Request(url, method string, params map[string]interface{},
 	return rspStr, nil
 }
 
+func (r *HttpRequest) SetTimeout(timeout int) {
+	r.timeout = timeout
+}
+
 func (r *HttpRequest) StoreCookies(cookies []*http.Cookie) {
-	r.cookies = cookies
+	r.Cookies = cookies
 }
 
 func (r *HttpRequest) StoreHeaders(headers http.Header) {
-	r.headers = headers
+	r.Headers = headers
 }
