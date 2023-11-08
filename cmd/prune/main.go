@@ -3,12 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-)
-
-const (
-	ModelUDMPro     = "UDMPro"
-	ModelUDR        = "UDR"
-	ModelController = "Controller"
+	"unifi-prune/config"
+	"unifi-prune/utils"
 )
 
 func main() {
@@ -41,9 +37,9 @@ func main() {
 		return
 	}
 	models := map[string]bool{
-		ModelUDMPro:     true,
-		ModelUDR:        true,
-		ModelController: true,
+		config.ModelUDMPro:     true,
+		config.ModelUDR:        true,
+		config.ModelController: true,
 	}
 	if _, ok := models[model]; !ok {
 		flag.Usage()
@@ -60,21 +56,9 @@ func main() {
 }
 
 func run(model, ip, port, user, password string) {
-	prune := NewPrune(model, ip, port, user, password)
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-			if len(prune.httpRequest.Cookies) == 0 {
-				return
-			}
-			err := prune.Logout()
-			if err != nil {
-				fmt.Printf("failed to logout: %s\n", err.Error())
-			}
-			fmt.Println("logged out successfully")
-		}
-	}()
-	err := prune.Run()
+	unifi := utils.NewUnifi(model, ip, port, user, password)
+	defer unifi.Recover()
+	err := unifi.Prune()
 	if err != nil {
 		fmt.Println(err)
 	}

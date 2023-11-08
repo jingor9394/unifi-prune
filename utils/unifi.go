@@ -1,19 +1,20 @@
-package main
+package utils
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"unifi-prune/config"
 )
 
-type Prune struct {
+type Unifi struct {
 	model    string
 	ip       string
 	port     string
 	user     string
 	password string
 
-	httpRequest       *HttpRequest
+	HttpRequest       *HttpRequest
 	loginPath         string
 	logoutPath        string
 	clientHistoryPath string
@@ -31,12 +32,12 @@ type RemoveOfflineClientsRsp struct {
 	Meta map[string]string `json:"meta"`
 }
 
-func NewPrune(model, ip, port, user, password string) *Prune {
+func NewUnifi(model, ip, port, user, password string) *Unifi {
 	var loginPath string
 	var logoutPath string
 	var clientHistoryPath string
 	var cmdRemovalPath string
-	if model == ModelController {
+	if model == config.ModelController {
 		loginPath = "api/login"
 		logoutPath = "api/logout"
 		clientHistoryPath = "v2/api/site/default/clients/history"
@@ -50,14 +51,14 @@ func NewPrune(model, ip, port, user, password string) *Prune {
 	if port == "" {
 		port = "443"
 	}
-	prune := &Prune{
+	prune := &Unifi{
 		model:    model,
 		ip:       ip,
 		port:     port,
 		user:     user,
 		password: password,
 
-		httpRequest:       NewHttpRequest(),
+		HttpRequest:       NewHttpRequest(),
 		loginPath:         loginPath,
 		logoutPath:        logoutPath,
 		clientHistoryPath: clientHistoryPath,
@@ -66,67 +67,43 @@ func NewPrune(model, ip, port, user, password string) *Prune {
 	return prune
 }
 
-func (p *Prune) Run() error {
-	fmt.Println("logging in")
-	err := p.Login()
-	if err != nil {
-		return err
-	}
-	fmt.Println("logged in successfully")
-	macs, err := p.GetOfflineClients()
-	if err != nil {
-		return err
-	}
-	fmt.Printf("totally %d offline clients\n", len(macs))
-	err = p.RemoveOfflineClients(macs)
-	if err != nil {
-		return err
-	}
-	err = p.Logout()
-	if err != nil {
-		return err
-	}
-	fmt.Println("logged out successfully")
-	return nil
-}
-
-func (p *Prune) Login() error {
+func (u *Unifi) Login() error {
 	params := map[string]interface{}{
-		"username": p.user,
-		"password": p.password,
+		"username": u.user,
+		"password": u.password,
 	}
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/json"
-	url := fmt.Sprintf("https://%s:%s/%s", p.ip, p.port, p.loginPath)
+	url := fmt.Sprintf("https://%s:%s/%s", u.ip, u.port, u.loginPath)
 
-	rsp, err := p.httpRequest.RequestRaw(url, "POST", params, headers)
+	rsp, err := u.HttpRequest.RequestRaw(url, "POST", params, headers)
 	if err != nil {
 		return err
 	}
-	p.httpRequest.StoreCookies(rsp.Cookies())
-	p.httpRequest.StoreHeaders(rsp.Header)
+	u.HttpRequest.StoreCookies(rsp.Cookies())
+	u.HttpRequest.StoreHeaders(rsp.Header)
 	return nil
 }
 
-func (p *Prune) Logout() error {
+func (u *Unifi) Logout() error {
 	headers := make(map[string]string)
-	token, ok := p.httpRequest.Headers["X-Csrf-Token"]
+	token, ok := u.HttpRequest.Headers["X-Csrf-Token"]
 	if ok && len(token) > 0 {
 		headers["X-Csrf-Token"] = token[0]
 	}
-	url := fmt.Sprintf("https://%s:%s/%s", p.ip, p.port, p.logoutPath)
+	url := fmt.Sprintf("https://%s:%s/%s", u.ip, u.port, u.logoutPath)
 
-	_, err := p.httpRequest.RequestRaw(url, "POST", nil, headers)
+	_, err := u.HttpRequest.RequestRaw(url, "POST", nil, headers)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Prune) GetOfflineClients() ([]string, error) {
+func (u *Unifi) GetOfflineClients() ([]string, error) {
 	params := "onlyNonBlocked=true&includeUnifiDevices=true&withinHours=0"
-	url := fmt.Sprintf("https://%s:%s/%s?%s", p.ip, p.port, p.clientHistoryPath, params)
-	rspStr, err := p.httpRequest.Request(url, "GET", nil, nil)
+	url := fmt.Sprintf("https://%s:%s/%s?%s", u.ip, u.port, u.clientHistoryPath, params)
+	rspStr, err := u.HttpRequest.Request(url, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +121,7 @@ func (p *Prune) GetOfflineClients() ([]string, error) {
 	return macs, nil
 }
 
-func (p *Prune) RemoveOfflineClients(macs []string) error {
+func (u *Unifi) RemoveOfflineClients(macs []string) error {
 	limit := 5
 	start := 0
 	end := start + limit
@@ -162,13 +139,13 @@ func (p *Prune) RemoveOfflineClients(macs []string) error {
 			"cmd":  "forget-sta",
 		}
 		headers := make(map[string]string)
-		token, ok := p.httpRequest.Headers["X-Csrf-Token"]
+		token, ok := u.HttpRequest.Headers["X-Csrf-Token"]
 		if ok && len(token) > 0 {
 			headers["X-Csrf-Token"] = token[0]
 		}
 
-		url := fmt.Sprintf("https://%s:%s/%s", p.ip, p.port, p.cmdRemovalPath)
-		rspStr, err := p.httpRequest.Request(url, "POST", params, headers)
+		url := fmt.Sprintf("https://%s:%s/%s", u.ip, u.port, u.cmdRemovalPath)
+		rspStr, err := u.HttpRequest.Request(url, "POST", params, headers)
 		if err != nil {
 			panic(fmt.Errorf("failed to remove offline clients: %w", err))
 		}
@@ -186,4 +163,42 @@ func (p *Prune) RemoveOfflineClients(macs []string) error {
 		end += limit
 	}
 	return nil
+}
+
+func (u *Unifi) Prune() error {
+	fmt.Println("logging in")
+	err := u.Login()
+	if err != nil {
+		return err
+	}
+	fmt.Println("logged in successfully")
+	macs, err := u.GetOfflineClients()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("totally %d offline clients\n", len(macs))
+	err = u.RemoveOfflineClients(macs)
+	if err != nil {
+		return err
+	}
+	err = u.Logout()
+	if err != nil {
+		return err
+	}
+	fmt.Println("logged out successfully")
+	return nil
+}
+
+func (u *Unifi) Recover() {
+	if r := recover(); r != nil {
+		fmt.Println(r)
+		if len(u.HttpRequest.Cookies) == 0 {
+			return
+		}
+		err := u.Logout()
+		if err != nil {
+			fmt.Printf("failed to logout: %s\n", err.Error())
+		}
+		fmt.Println("logged out successfully")
+	}
 }
