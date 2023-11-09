@@ -17,8 +17,10 @@ type Unifi struct {
 	HttpRequest       *HttpRequest
 	loginPath         string
 	logoutPath        string
+	clientActivePath  string
 	clientHistoryPath string
 	cmdRemovalPath    string
+	wlanConfigPath    string
 }
 
 type Client struct {
@@ -26,7 +28,15 @@ type Client struct {
 	Mac  string `json:"mac"`
 }
 
-type GetOfflineClientsRsp []*Client
+type WlanConfig struct {
+	Config struct {
+		Name          string   `json:"name"`
+		MacFilterList []string `json:"mac_filter_list"`
+	} `json:"configuration"`
+}
+
+type GetClientsRsp []*Client
+type GetWlanConfig []*WlanConfig
 
 type RemoveOfflineClientsRsp struct {
 	Meta map[string]string `json:"meta"`
@@ -35,18 +45,24 @@ type RemoveOfflineClientsRsp struct {
 func NewUnifi(model, ip, port, user, password string) *Unifi {
 	var loginPath string
 	var logoutPath string
+	var clientActivePath string
 	var clientHistoryPath string
 	var cmdRemovalPath string
+	var wlanConfigPath string
 	if model == config.ModelController {
-		loginPath = "api/login"
-		logoutPath = "api/logout"
-		clientHistoryPath = "v2/api/site/default/clients/history"
-		cmdRemovalPath = "api/s/default/cmd/stamgr"
+		loginPath = config.ControllerLoginPath
+		logoutPath = config.ControllerLogoutPath
+		clientActivePath = config.ControllerClientActivePath
+		clientHistoryPath = config.ControllerClientHistoryPath
+		cmdRemovalPath = config.ControllerCmdRemovalPath
+		wlanConfigPath = config.ControllerWlanConfigPath
 	} else {
-		loginPath = "api/auth/login"
-		logoutPath = "api/auth/logout"
-		clientHistoryPath = "proxy/network/v2/api/site/default/clients/history"
-		cmdRemovalPath = "proxy/network/api/s/default/cmd/stamgr"
+		loginPath = config.LoginPath
+		logoutPath = config.LogoutPath
+		clientActivePath = config.ClientActivePath
+		clientHistoryPath = config.ClientHistoryPath
+		cmdRemovalPath = config.CmdRemovalPath
+		wlanConfigPath = config.WlanConfigPath
 	}
 	if port == "" {
 		port = "443"
@@ -61,8 +77,10 @@ func NewUnifi(model, ip, port, user, password string) *Unifi {
 		HttpRequest:       NewHttpRequest(),
 		loginPath:         loginPath,
 		logoutPath:        logoutPath,
+		clientActivePath:  clientActivePath,
 		clientHistoryPath: clientHistoryPath,
 		cmdRemovalPath:    cmdRemovalPath,
+		wlanConfigPath:    wlanConfigPath,
 	}
 	return prune
 }
@@ -100,32 +118,79 @@ func (u *Unifi) Logout() error {
 	return nil
 }
 
-func (u *Unifi) GetOfflineClients() ([]string, error) {
+func (u *Unifi) GetOfflineClients() ([]*Client, error) {
 	params := "onlyNonBlocked=true&includeUnifiDevices=true&withinHours=0"
 	url := fmt.Sprintf("https://%s:%s/%s?%s", u.ip, u.port, u.clientHistoryPath, params)
 	rspStr, err := u.HttpRequest.Request(url, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	var rsp GetOfflineClientsRsp
+	var rsp GetClientsRsp
 	err = json.Unmarshal(rspStr, &rsp)
 	if err != nil {
 		return nil, fmt.Errorf("GetOfflineClients json unmarshal error: %w", err)
 	}
+	return rsp, nil
+}
+
+func (u *Unifi) GetActiveClients() ([]*Client, error) {
+	params := "includeTrafficUsage=true&includeUnifiDevices=true"
+	url := fmt.Sprintf("https://%s:%s/%s?%s", u.ip, u.port, u.clientActivePath, params)
+	rspStr, err := u.HttpRequest.Request(url, "GET", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var rsp GetClientsRsp
+	err = json.Unmarshal(rspStr, &rsp)
+	if err != nil {
+		return nil, fmt.Errorf("GetActiveClients json unmarshal error: %w", err)
+	}
+	return rsp, nil
+}
+
+func (u *Unifi) GetClientsMap() (map[string]string, error) {
+	clientsMap := make(map[string]string)
+	activeClients, err := u.GetActiveClients()
+	if err != nil {
+		return nil, err
+	}
+	offlineClients, err := u.GetOfflineClients()
+	if err != nil {
+		return nil, err
+	}
+	clients := append(activeClients, offlineClients...)
+	for _, client := range clients {
+		clientsMap[client.Mac] = client.Name
+	}
+	return clientsMap, nil
+}
+
+func (u *Unifi) GetWlanConfigs() ([]*WlanConfig, error) {
+	url := fmt.Sprintf("https://%s:%s/%s", u.ip, u.port, u.wlanConfigPath)
+	rspStr, err := u.HttpRequest.Request(url, "GET", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var rsp GetWlanConfig
+	err = json.Unmarshal(rspStr, &rsp)
+	if err != nil {
+		return nil, fmt.Errorf("GetWlanConfigs json unmarshal error: %w", err)
+	}
+	return rsp, nil
+}
+
+func (u *Unifi) RemoveOfflineClients(clients []*Client) error {
 	var macs []string
-	for _, client := range rsp {
+	for _, client := range clients {
 		if client.Name == "" {
 			macs = append(macs, client.Mac)
 		}
 	}
-	return macs, nil
-}
-
-func (u *Unifi) RemoveOfflineClients(macs []string) error {
 	limit := 5
 	start := 0
 	end := start + limit
 	length := len(macs)
+	fmt.Printf("totally %d offline clients\n", length)
 	for {
 		if start >= length {
 			break
@@ -166,7 +231,6 @@ func (u *Unifi) RemoveOfflineClients(macs []string) error {
 }
 
 func (u *Unifi) Prune() error {
-	fmt.Println("logging in")
 	err := u.Login()
 	if err != nil {
 		return err
@@ -176,10 +240,42 @@ func (u *Unifi) Prune() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("totally %d offline clients\n", len(macs))
 	err = u.RemoveOfflineClients(macs)
 	if err != nil {
 		return err
+	}
+	err = u.Logout()
+	if err != nil {
+		return err
+	}
+	fmt.Println("logged out successfully")
+	return nil
+}
+
+func (u *Unifi) PrintMacFilterList() error {
+	err := u.Login()
+	if err != nil {
+		return err
+	}
+	fmt.Println("logged in successfully")
+
+	clientsMap, err := u.GetClientsMap()
+	if err != nil {
+		return err
+	}
+	wlanConfigs, err := u.GetWlanConfigs()
+	if err != nil {
+		return err
+	}
+	for _, wlanConfig := range wlanConfigs {
+		fmt.Printf("[%s] Mac Filter List\n", wlanConfig.Config.Name)
+		for _, mac := range wlanConfig.Config.MacFilterList {
+			if name, ok := clientsMap[mac]; ok {
+				fmt.Printf("%s: %s\n", mac, name)
+				continue
+			}
+			fmt.Printf("%s: Unknown\n", mac)
+		}
 	}
 	err = u.Logout()
 	if err != nil {

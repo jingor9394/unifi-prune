@@ -1,13 +1,23 @@
-BINARY_NAME=unifi-prune
+PATH_PRUNE=./cmd/prune
+PATH_FILTER=./cmd/filter
+BINARY_NAME_PRUNE=prune
+BINARY_NAME_FILTER=filter
 
-build:
-	cd ./cmd/prune && go build -o ${BINARY_NAME} *.go && mv ${BINARY_NAME} ../../
+build_prune:
+	cd ${PATH_PRUNE} && go build -o ${BINARY_NAME_PRUNE} *.go && mv ${BINARY_NAME_PRUNE} ../../
 
-run:
-	cd ./cmd/prune && go run *.go
+build_filter:
+	cd ${PATH_FILTER} && go build -o ${BINARY_NAME_FILTER} *.go && mv ${BINARY_NAME_FILTER} ../../
+
+run_prune:
+	cd ${PATH_PRUNE} && go run *.go
+
+run_filter:
+	cd ${PATH_FILTER} && go run *.go
 
 format:
 	gofmt -s -w .
 
 clean:
-	rm ${BINARY_NAME}
+	rm -f ${BINARY_NAME_PRUNE}
+	rm -f ${BINARY_NAME_FILTER}
