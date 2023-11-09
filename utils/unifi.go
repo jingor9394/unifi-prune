@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"unifi-prune/config"
+	"unifi-prune/configs"
 )
 
 type Unifi struct {
@@ -49,20 +49,20 @@ func NewUnifi(model, ip, port, user, password string) *Unifi {
 	var clientHistoryPath string
 	var cmdRemovalPath string
 	var wlanConfigPath string
-	if model == config.ModelController {
-		loginPath = config.ControllerLoginPath
-		logoutPath = config.ControllerLogoutPath
-		clientActivePath = config.ControllerClientActivePath
-		clientHistoryPath = config.ControllerClientHistoryPath
-		cmdRemovalPath = config.ControllerCmdRemovalPath
-		wlanConfigPath = config.ControllerWlanConfigPath
+	if model == configs.ModelController {
+		loginPath = configs.ControllerLoginPath
+		logoutPath = configs.ControllerLogoutPath
+		clientActivePath = configs.ControllerClientActivePath
+		clientHistoryPath = configs.ControllerClientHistoryPath
+		cmdRemovalPath = configs.ControllerCmdRemovalPath
+		wlanConfigPath = configs.ControllerWlanConfigPath
 	} else {
-		loginPath = config.LoginPath
-		logoutPath = config.LogoutPath
-		clientActivePath = config.ClientActivePath
-		clientHistoryPath = config.ClientHistoryPath
-		cmdRemovalPath = config.CmdRemovalPath
-		wlanConfigPath = config.WlanConfigPath
+		loginPath = configs.LoginPath
+		logoutPath = configs.LogoutPath
+		clientActivePath = configs.ClientActivePath
+		clientHistoryPath = configs.ClientHistoryPath
+		cmdRemovalPath = configs.CmdRemovalPath
+		wlanConfigPath = configs.WlanConfigPath
 	}
 	if port == "" {
 		port = "443"

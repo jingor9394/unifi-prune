@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"unifi-prune/config"
+	"unifi-prune/configs"
 )
 
 type Params struct {
@@ -47,9 +47,9 @@ func NewParams() (*Params, error) {
 		return nil, InvalidParams
 	}
 	models := map[string]bool{
-		config.ModelUDMPro:     true,
-		config.ModelUDR:        true,
-		config.ModelController: true,
+		configs.ModelUDMPro:     true,
+		configs.ModelUDR:        true,
+		configs.ModelController: true,
 	}
 	if _, ok := models[model]; !ok {
 		flag.Usage()

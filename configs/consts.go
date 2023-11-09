@@ -1,4 +1,4 @@
-package config
+package configs
 
 const (
 	ModelUDMPro     = "UDMPro"
