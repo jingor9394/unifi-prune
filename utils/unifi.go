@@ -268,7 +268,7 @@ func (u *Unifi) PrintMacFilterList() error {
 		return err
 	}
 	for _, wlanConfig := range wlanConfigs {
-		fmt.Printf("[%s] Mac Filter List\n", wlanConfig.Config.Name)
+		fmt.Printf("[%s]\n", wlanConfig.Config.Name)
 		for _, mac := range wlanConfig.Config.MacFilterList {
 			if name, ok := clientsMap[mac]; ok {
 				fmt.Printf("%s: %s\n", mac, name)
