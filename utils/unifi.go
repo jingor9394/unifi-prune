@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"unifi-prune/configs"
 )
@@ -269,12 +270,22 @@ func (u *Unifi) PrintMacFilterList() error {
 	}
 	for _, wlanConfig := range wlanConfigs {
 		fmt.Printf("[%s]\n", wlanConfig.Config.Name)
+		// Sort keys first by value and then iterate map
+		macFilterMap := make(map[string]string)
+		macs := make([]string, 0, len(wlanConfig.Config.MacFilterList))
 		for _, mac := range wlanConfig.Config.MacFilterList {
+			macs = append(macs, mac)
 			if name, ok := clientsMap[mac]; ok {
-				fmt.Printf("%s: %s\n", mac, name)
+				macFilterMap[mac] = name
 				continue
 			}
-			fmt.Printf("%s: Unknown\n", mac)
+			macFilterMap[mac] = "Unknown"
+		}
+		sort.Slice(macs, func(i, j int) bool {
+			return macFilterMap[macs[i]] < macFilterMap[macs[j]]
+		})
+		for _, mac := range macs {
+			fmt.Printf("%s: %s\n", mac, macFilterMap[mac])
 		}
 	}
 	err = u.Logout()
