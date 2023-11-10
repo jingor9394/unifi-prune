@@ -20,7 +20,7 @@ type HttpRequest struct {
 
 func NewHttpRequest() *HttpRequest {
 	httpRequest := &HttpRequest{
-		timeout: 10,
+		timeout: 30,
 	}
 	return httpRequest
 }
