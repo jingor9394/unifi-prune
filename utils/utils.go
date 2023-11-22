@@ -34,10 +34,10 @@ func NewParams() (*Params, error) {
     Unifi model
 -g
     Unifi console ip address
--u
-    Unifi console user
 -p
-    Unifi console password`
+    Unifi console port (Optional)
+-u
+    Unifi console user`
 		fmt.Println(usage)
 	}
 	flag.Parse()
