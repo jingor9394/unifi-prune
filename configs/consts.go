@@ -1,8 +1,7 @@
 package configs
 
 const (
-	ModelUDMPro     = "UDMPro"
-	ModelUDR        = "UDR"
+	ModelConsole    = "Console"
 	ModelController = "Controller"
 )
 

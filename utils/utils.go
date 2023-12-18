@@ -13,6 +13,7 @@ type Params struct {
 	Port     string
 	User     string
 	Password string
+	DryRun   bool
 }
 
 var InvalidParams = errors.New("invalid params")
@@ -23,21 +24,25 @@ func NewParams() (*Params, error) {
 	var user string
 	var password string
 	var port string
+	var dryRun bool
 
 	flag.StringVar(&model, "m", "", "")
 	flag.StringVar(&ip, "g", "", "")
 	flag.StringVar(&user, "u", "", "")
 	flag.StringVar(&port, "p", "", "")
+	flag.BoolVar(&dryRun, "d", false, "")
 	flag.Usage = func() {
 		usage := `Usages:
--m <UDMPro/UDR/Controller>
+-m <Console/Controller>
     Unifi model
 -g
     Unifi console ip address
 -p
     Unifi console port (Optional)
 -u
-    Unifi console user`
+    Unifi console user
+-d <true>
+    Dry run`
 		fmt.Println(usage)
 	}
 	flag.Parse()
@@ -47,8 +52,7 @@ func NewParams() (*Params, error) {
 		return nil, InvalidParams
 	}
 	models := map[string]bool{
-		configs.ModelUDMPro:     true,
-		configs.ModelUDR:        true,
+		configs.ModelConsole:    true,
 		configs.ModelController: true,
 	}
 	if _, ok := models[model]; !ok {
@@ -69,6 +73,7 @@ func NewParams() (*Params, error) {
 		Port:     port,
 		User:     user,
 		Password: password,
+		DryRun:   dryRun,
 	}
 	return params, nil
 }

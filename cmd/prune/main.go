@@ -12,7 +12,7 @@ func main() {
 	}
 	unifi := utils.NewUnifi(params.Model, params.IP, params.Port, params.User, params.Password)
 	defer unifi.Recover()
-	err = unifi.Prune()
+	err = unifi.Prune(params.DryRun)
 	if err != nil {
 		fmt.Println(err)
 	}

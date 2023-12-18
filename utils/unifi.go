@@ -149,6 +149,17 @@ func (u *Unifi) GetActiveClients() ([]*Client, error) {
 	return rsp, nil
 }
 
+func (u *Unifi) GetRemovedMacs(clients []*Client) []string {
+	var macs []string
+	for _, client := range clients {
+		if client.Name == "" {
+			macs = append(macs, client.Mac)
+		}
+	}
+	fmt.Printf("totally %d offline clients: %s\n", len(macs), strings.Join(macs, ", "))
+	return macs
+}
+
 func (u *Unifi) GetClientsMap() (map[string]string, error) {
 	clientsMap := make(map[string]string)
 	activeClients, err := u.GetActiveClients()
@@ -180,18 +191,11 @@ func (u *Unifi) GetWlanConfigs() ([]*WlanConfig, error) {
 	return rsp, nil
 }
 
-func (u *Unifi) RemoveOfflineClients(clients []*Client) error {
-	var macs []string
-	for _, client := range clients {
-		if client.Name == "" {
-			macs = append(macs, client.Mac)
-		}
-	}
+func (u *Unifi) RemoveOfflineMacs(macs []string) error {
 	limit := 5
 	start := 0
 	end := start + limit
 	length := len(macs)
-	fmt.Printf("totally %d offline clients\n", length)
 	for {
 		if start >= length {
 			break
@@ -218,7 +222,7 @@ func (u *Unifi) RemoveOfflineClients(clients []*Client) error {
 		var rsp RemoveOfflineClientsRsp
 		err = json.Unmarshal(rspStr, &rsp)
 		if err != nil {
-			panic(fmt.Errorf("RemoveOfflineClients json unmarshal error: %w", err))
+			panic(fmt.Errorf("RemoveOfflineMacs json unmarshal error: %w", err))
 		}
 		result, ok := rsp.Meta["rc"]
 		if ok && result == "ok" {
@@ -231,19 +235,22 @@ func (u *Unifi) RemoveOfflineClients(clients []*Client) error {
 	return nil
 }
 
-func (u *Unifi) Prune() error {
+func (u *Unifi) Prune(dryRun bool) error {
 	err := u.Login()
 	if err != nil {
 		return err
 	}
 	fmt.Println("logged in successfully")
-	macs, err := u.GetOfflineClients()
+	clients, err := u.GetOfflineClients()
 	if err != nil {
 		return err
 	}
-	err = u.RemoveOfflineClients(macs)
-	if err != nil {
-		return err
+	macs := u.GetRemovedMacs(clients)
+	if !dryRun {
+		err = u.RemoveOfflineMacs(macs)
+		if err != nil {
+			return err
+		}
 	}
 	err = u.Logout()
 	if err != nil {
